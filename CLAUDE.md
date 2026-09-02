@@ -1,10 +1,10 @@
-# Marlenia — Projektstand (Stand: v1.121)
+# Marlenia — Projektstand (Stand: v1.122)
 
 ## Überblick
 Marlenia ist eine Intervallfasten-Tracker-App (deutschsprachig), gebaut für Reno Schramm als persönliches Projekt, benannt nach seiner Frau Marlen. Tagline: „Intervallfasten leicht gemacht".
 
 ## Architektur
-- **Einzelne, eigenständige HTML-Datei** (`index.html`), keine Build-Pipeline, kein npm/Bundler.
+- **Einzelne, eigenständige HTML-Datei** (`index.html`), keine Build-Pipeline, kein npm/Bundler. Einzige Ausnahme seit v1.122: `sw.js` (Service Worker fürs Erinnerungen-Feature, siehe unten) — technisch bedingt eine separate Datei, da Service Worker nicht inline im HTML registriert werden können.
 - React 18, Tailwind CSS und der Supabase-JS-Client werden zur Laufzeit von CDN geladen (`unpkg.com`, `cdn.tailwindcss.com`, `cdn.jsdelivr.net/npm/@supabase/supabase-js@2`).
 - Kein JSX — reines `React.createElement` (Alias `e`), da die Datei ohne Babel/Transpiler läuft.
 - Icons: teils hand-gezeichnete Inline-SVGs, teils `svgBase()`-Helper — **kein** lucide-react (das war nur in einer inzwischen verworfenen `.jsx`-Artefakt-Version im Einsatz; diese wird nicht mehr gepflegt).
@@ -27,6 +27,12 @@ Marlenia ist eine Intervallfasten-Tracker-App (deutschsprachig), gebaut für Ren
 - Bearbeitung läuft über einen `fastDrafts`-State (Map `Index → {target, start, end}`), nicht mehr über den alten Single-Edit-Toggle (`editingFastIndex`/`editingFastValue`, entfernt) — dadurch sind alle Einträge gleichzeitig editierbar, wie im Mockup gezeigt.
 - Die drei Felder (Ziel/Start/Ende) sind in der Handyansicht untereinander gestapelt (`grid-cols-1`, ab `sm`-Breakpoint `sm:grid-cols-3` nebeneinander), seit v1.113.
 - **Löschen (Gewicht wie Fastenzeit) erfordert seit v1.114 eine Bestätigung** über das bestehende `ConfirmModal` (State `confirmDeleteEntry: {type: "weight"|"fast", idx} | null`) — der „×"-Button löscht nicht mehr direkt, sondern öffnet den Bestätigungsdialog.
+
+## Erinnerungen (seit v1.122)
+- **Nur Vordergrund-Erinnerungen, kein echter Hintergrund-Push.** Bewusste Architekturentscheidung: echte Push-Benachrichtigungen bei komplett geschlossener App bräuchten eine Server-Komponente (Push-Subscription mit VAPID-Keys + ein zeitgesteuerter Trigger, der prüft, wessen Fastenzeit gleich endet, z. B. eine Supabase Edge Function per Cron) — das sprengt den bisherigen Rahmen (statisches GitHub Pages + Supabase nur als Datenbank, keine Server-Funktionen). Stattdessen: ein Timer-Effekt, der nur feuert, solange die App kürzlich offen/aktiv war (iOS gibt dafür ein kurzes Zeitfenster nach dem Backgrounden) — funktioniert nicht zuverlässig, wenn das Handy seit Stunden gesperrt ist.
+- **Minimaler Service Worker (`sw.js`, neue Datei im Repo-Root):** ausschließlich um `ServiceWorkerRegistration.showNotification()` verfügbar zu machen — auf iOS ist der `new Notification(...)`-Konstruktor in installierten Home-Screen-Apps nicht erlaubt, nur der Weg über einen registrierten Service Worker funktioniert dort zuverlässig. Bewusst **ohne** `fetch`-Handler/Caching, damit `index.html` nie aus einem SW-Cache statt frisch von GitHub Pages geladen wird (würde sonst mit der Versionierungs-Konvention kollidieren). Wird in `Dashboard` per `navigator.serviceWorker.register("sw.js")` registriert.
+- **Aktivierung:** Toggle „Erinnerungen" oben im Einstellungen-Panel (`showSettings`, Fasten-Tab, Zahnrad-Icon), mit `Bell`-Icon. Button „Aktivieren" ruft `Notification.requestPermission()` auf (muss aus einer Nutzer-Geste kommen) und setzt bei Erfolg `state.notificationsEnabled = true`; bei Ablehnung/Blockierung erscheint ein Hinweistext (`notifError` bzw. Prüfung auf `notifPermission === "denied"`). Button „Aus" setzt `notificationsEnabled` wieder auf `false` (der Browser-Permission-Status selbst lässt sich aus der App heraus nicht zurücknehmen).
+- **Zwei Erinnerungen pro Phase**, ausgelöst über einen `useEffect`, der bei jedem `now`-Tick (sekündlich) die Restzeit prüft, sowie einen `notifiedRef` (Objekt `{key, soon, done}`, `key` = `"fast:" + fastStart` bzw. `"eat:" + state.eatingStart`), der pro Fasten-/Essensfenster nur einmal feuert und beim Wechsel auf ein neues Fenster zurückgesetzt wird: (1) 15 Minuten vor Fastenende „Bald geschafft!" bzw. 15 Minuten vor Essensfenster-Ende „Essensfenster schließt bald", (2) beim tatsächlichen Erreichen des Endpunkts „Fastenziel erreicht" bzw. „Essensfenster geschlossen". Auslösung über `fireNotification(title, body)`, die `navigator.serviceWorker.ready` nutzt und als Icon das bestehende `apple-touch-icon` aus dem `<head>` wiederverwendet (kein separates Notification-Icon-Asset nötig).
 
 ## Hosting & Deployment
 - Live-Version läuft über **GitHub Pages**: Repo `renoschramm-arch/marlenia`, URL `https://renoschramm-arch.github.io/marlenia/`.
@@ -77,5 +83,6 @@ Alle Fotos werden als Base64-JPEG direkt im Script eingebettet (`const XYZ_BACKG
 
 ## Offene Ideen (besprochen, noch nicht umgesetzt)
 - Konto-lösch-Funktion in der UI.
+- Echter Hintergrund-Push für Erinnerungen (zuverlässig auch bei komplett geschlossener App) — bräuchte neue Server-Infrastruktur (Push-Subscription/VAPID + serverseitigen Trigger, z. B. Supabase Edge Function per Cron); seit v1.122 gibt es nur die Vordergrund-Variante (siehe „Erinnerungen"-Abschnitt oben).
 - Ggf. weitere Monetarisierungs-Optionen über PayPal-Spenden hinaus.
 
