@@ -1,15 +1,24 @@
-# Marlenia — Projektstand (Stand: v1.65)
+# Marlenia — Projektstand (Stand: v1.107)
 
 ## Überblick
 Marlenia ist eine Intervallfasten-Tracker-App (deutschsprachig), gebaut für Reno Schramm als persönliches Projekt, benannt nach seiner Frau Marlen. Tagline: „Intervallfasten leicht gemacht".
 
 ## Architektur
 - **Einzelne, eigenständige HTML-Datei** (`index.html`), keine Build-Pipeline, kein npm/Bundler.
-- React 18 und Tailwind CSS werden zur Laufzeit von CDN geladen (`unpkg.com`, `cdn.tailwindcss.com`).
+- React 18, Tailwind CSS und der Supabase-JS-Client werden zur Laufzeit von CDN geladen (`unpkg.com`, `cdn.tailwindcss.com`, `cdn.jsdelivr.net/npm/@supabase/supabase-js@2`).
 - Kein JSX — reines `React.createElement` (Alias `e`), da die Datei ohne Babel/Transpiler läuft.
 - Icons: teils hand-gezeichnete Inline-SVGs, teils `svgBase()`-Helper — **kein** lucide-react (das war nur in einer inzwischen verworfenen `.jsx`-Artefakt-Version im Einsatz; diese wird nicht mehr gepflegt).
-- Daten-Persistenz: **`localStorage`**, Key `"marlenia:state:v1"`.
-- Zustand liegt komplett im `state`-Objekt der `Dashboard`-Komponente, wird bei jeder Änderung per `saveState()` synchron in `localStorage` geschrieben.
+- Daten-Persistenz: **Supabase** (Postgres) ist seit v1.81 die Quelle der Wahrheit, `localStorage` (Key `"emberfast:state:v1"`) dient nur noch als lokaler Cache/Migrationsquelle — siehe „Auth & Cloud-Sync" unten.
+- Zustand liegt komplett im `state`-Objekt der `Dashboard`-Komponente, wird bei jeder Änderung sofort in `localStorage` gecacht und debounced (1,2 s) in die Cloud synchronisiert.
+
+## Auth & Cloud-Sync (seit v1.81)
+- **Nutzerkonten** über Supabase Auth (E-Mail/Passwort). `SUPABASE_URL` und `SUPABASE_ANON_KEY` sind als Konstanten direkt im Script eingebettet (Anon-Key ist laut Supabase-Design öffentlich, Zugriff wird über Row-Level-Security auf Tabellenebene beschränkt).
+- **Registrierung/Login:** `AuthScreen`-Komponente, ruft `supabaseClient.auth.signUp(...)` bzw. `signInWithPassword(...)` auf. Registrierung erfordert E-Mail-Bestätigung; ohne Bestätigung entsteht keine Session (siehe `AuthScreen`-Infomeldung „Fast geschafft! …").
+- **E-Mail-Versand läuft über Resend, nicht mehr über Supabases eingebauten Mailversand.** Resend ist als Custom-SMTP-Provider in den Supabase-Auth-Einstellungen hinterlegt (Dashboard-Konfiguration, nicht im Client-Code sichtbar). Vorlagen liegen als eigenständige HTML-Dateien im Repo unter `emails/`: `supabase-confirm-signup.html` (Supabase-Auth-Bestätigungsmail, Go-Template-Syntax `{{ .ConfirmationURL }}`, wird als Custom-Template im Supabase-Dashboard eingetragen) und `willkommen.html` (separate Willkommens-Mail im App-Design, Resend-eigene Template-Syntax `{{{USER_FIRST_NAME}}}` / `{{{RESEND_UNSUBSCRIBE_URL}}}`, über Resend Broadcasts/Audiences verschickt).
+- **Cloud-Speicherung:** Tabelle `user_state` (Spalten `user_id`, `state` als JSONB, `updated_at`), pro Konto ein Datensatz. Wird per `upsert` beschrieben (debounced 1200 ms nach jeder `state`-Änderung) und beim Login per `select ... eq("user_id", userId).maybeSingle()` geladen.
+- **Migration lokaler Alt-Daten:** Existiert beim ersten Login mit einem Konto noch kein Cloud-Datensatz, aber lokale `localStorage`-Daten (aus der Zeit vor Nutzerkonten oder von einem Gerät ohne Login), zeigt `MigrationScreen` die Wahl „Daten übernehmen" (lädt sie in die Cloud hoch) oder „Neu starten" (verwirft sie).
+- **Zugang/Accounts verwalten:** Es gibt aktuell **keine** Admin-Oberfläche, keinen Einladungs-Mechanismus und keine Möglichkeit, Nutzer:innen aus der App-Session heraus zu verwalten (keine Service-Role-Credentials im Client, nur der Anon-Key). Registrierung ist reines Self-Service über den Login-Screen — jede:r mit der URL kann sich selbst ein Konto anlegen. Konto-/Nutzerverwaltung (z. B. Löschen, Passwort-Reset erzwingen, Zugriff sperren) läuft ausschließlich über das Supabase-Dashboard des Projekts, nicht über diesen Code.
+- Es gibt bislang **keinen** Passwort-vergessen-Flow und **keine** Konto-lösch-Funktion in der UI.
 
 ## Hosting & Deployment
 - Live-Version läuft über **GitHub Pages**: Repo `renoschramm-arch/marlenia`, URL `https://renoschramm-arch.github.io/marlenia/`.
@@ -58,6 +67,6 @@ Alle Fotos werden als Base64-JPEG direkt im Script eingebettet (`const XYZ_BACKG
 5. **Vor jeder Auslieferung:** Datei mit `node --check` auf einer extrahierten `<script>`-Sektion validieren (strenger als `new Function()`), UND jede neue Komponente/jeden neuen State explizit per `grep` verifizieren (Funktion definiert? State deklariert? Aufruf verdrahtet? Im Render-Baum eingebunden?) — reines „Datei wurde geschrieben" ist keine Garantie, dass alle Teile auch verbunden sind.
 
 ## Offene Ideen (besprochen, noch nicht umgesetzt)
-- Automatische Erinnerung zum Datenexport (kein Cloud-Sync vorhanden — bei Geräteverlust sind Daten weg).
+- Passwort-vergessen-Flow und Konto-lösch-Funktion in der UI.
 - Ggf. weitere Monetarisierungs-Optionen über PayPal-Spenden hinaus.
 
