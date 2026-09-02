@@ -1,4 +1,4 @@
-# Marlenia — Projektstand (Stand: v1.114)
+# Marlenia — Projektstand (Stand: v1.115)
 
 ## Überblick
 Marlenia ist eine Intervallfasten-Tracker-App (deutschsprachig), gebaut für Reno Schramm als persönliches Projekt, benannt nach seiner Frau Marlen. Tagline: „Intervallfasten leicht gemacht".
@@ -44,7 +44,7 @@ Marlenia ist eine Intervallfasten-Tracker-App (deutschsprachig), gebaut für Ren
 - Bar-Chart-Farbverläufe (jeweils zu Gold): Trinkmenge Blau `#6FB1E0`, Fastenzeit Orange `#E0703A`, Gewicht Grün `#6FA87A`.
 
 ## Tab-Struktur
-1. **Fasten** — Ring-Timer, Streak-Badge, Progression-Vorschlag, Start/Stop (inkl. rückwirkend), Wasser-Tracker, Gewichts-Tracker. Im Ring-Overlay steht unter der Restzeit-Anzeige eine Milchglas-Pill (`rounded-full border border-[#5C4530] bg-[#3A2317]/70 backdrop-blur-sm`, seit v1.108/v1.109) mit zwei Zeilen: einer Beschriftung (z. B. „bis zum Fastenende", `text-xs`) und darunter der konkreten Uhrzeit, wann das Fasten endet bzw. das Essensfenster beginnt (z. B. „Ende: 18:30 Uhr", `fmtClock()`-Helper, `text-sm` — bewusst größer als die Beschriftung, seit v1.112; **nicht** zu verwechseln mit der großen Countdown-Digitalanzeige im Ring selbst, die unverändert `text-3xl` bleibt).
+1. **Fasten** — Ring-Timer, Streak-Badge, Progression-Vorschlag, Start/Stop (inkl. rückwirkend), Wasser-Tracker, Gewichts-Tracker. Im Ring-Overlay steht unter der Restzeit-Anzeige eine Milchglas-Pill (`rounded-full border border-[#5C4530] bg-[#3A2317]/70 backdrop-blur-sm`, seit v1.108/v1.109) mit zwei Zeilen: einer Beschriftung (z. B. „bis zum Fastenende", `text-xs`) und darunter der konkreten Uhrzeit, wann das Fasten endet bzw. das Essensfenster beginnt — reine Uhrzeit ohne „Ende:"/„Beginn:"-Präfix, deutlich groß (`fmtClock()`-Helper, `text-xl font-semibold`, seit v1.115; **nicht** zu verwechseln mit der großen Countdown-Digitalanzeige im Ring selbst, die unverändert `text-3xl` bleibt).
 2. **Verlauf** — Fastenkalender (Monats-Heatmap), Zielgewicht-Fortschrittsbalken (editierbar), Gewichtstrend-Chart (mit kg-Skala), gemeinsame Karte mit drei 7-Tage-Balkendiagrammen (Trinkmenge/Fastenzeit/Gewicht), „Verlauf verwalten" (ausklappbar, Bearbeiten/Löschen einzelner Einträge — siehe unten für das Fastenzeiten-Bearbeitungsschema seit v1.111).
 3. **Plan** — Wochenrotation, Protokoll-Auswahl (14:10 bis 36h), eigene Fastenzeit.
 4. **Design** — Hintergrund-Auswahl: 5 Farbverläufe (Schokobraun, Mitternacht, Waldgrün, Bordeaux, Anthrazit) + Foto-Themes (siehe unten) + eigene Fotos aus der Galerie hochladbar (clientseitig auf ~640px verkleinert, als Data-URL in `state.customBackgrounds` gespeichert).
