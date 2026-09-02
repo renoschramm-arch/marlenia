@@ -1,4 +1,4 @@
-# Marlenia — Projektstand (Stand: v1.120)
+# Marlenia — Projektstand (Stand: v1.121)
 
 ## Überblick
 Marlenia ist eine Intervallfasten-Tracker-App (deutschsprachig), gebaut für Reno Schramm als persönliches Projekt, benannt nach seiner Frau Marlen. Tagline: „Intervallfasten leicht gemacht".
@@ -14,11 +14,12 @@ Marlenia ist eine Intervallfasten-Tracker-App (deutschsprachig), gebaut für Ren
 ## Auth & Cloud-Sync (seit v1.81)
 - **Nutzerkonten** über Supabase Auth (E-Mail/Passwort). `SUPABASE_URL` und `SUPABASE_ANON_KEY` sind als Konstanten direkt im Script eingebettet (Anon-Key ist laut Supabase-Design öffentlich, Zugriff wird über Row-Level-Security auf Tabellenebene beschränkt).
 - **Registrierung/Login:** `AuthScreen`-Komponente, ruft `supabaseClient.auth.signUp(...)` bzw. `signInWithPassword(...)` auf. Registrierung erfordert E-Mail-Bestätigung; ohne Bestätigung entsteht keine Session (siehe `AuthScreen`-Infomeldung „Fast geschafft! …").
+- **Passwort-vergessen-Flow (seit v1.121):** `AuthScreen` hat einen dritten Modus `"forgot"` (State `mode`, zusätzlich zu `"login"`/`"register"`), erreichbar über den Link „Passwort vergessen?" unter dem Passwortfeld im Login-Modus. Ruft `supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: ... })` auf und zeigt danach immer dieselbe generische Erfolgsmeldung, unabhängig davon, ob zur E-Mail ein Konto existiert (kein Enumeration-Leak). Der Reset-Link führt zurück in die App; Supabase erkennt das Recovery-Token automatisch und feuert im `onAuthStateChange`-Listener (`Marlenia`-Root-Komponente) das Event `"PASSWORD_RECOVERY"`, das den State `recoveryMode` setzt. Solange `recoveryMode` aktiv ist, wird statt des normalen Dashboards die neue Komponente `ResetPasswordScreen` gerendert (neues Passwort + Bestätigung, ruft `supabaseClient.auth.updateUser({ password })` auf); nach erfolgreichem Speichern (Button „Weiter") wird `recoveryMode` zurückgesetzt und die App fährt normal fort. `recoveryMode` wird außerdem automatisch zurückgesetzt, sobald keine Session mehr besteht.
 - **E-Mail-Versand läuft über Resend, nicht mehr über Supabases eingebauten Mailversand.** Resend ist als Custom-SMTP-Provider in den Supabase-Auth-Einstellungen hinterlegt (Dashboard-Konfiguration, nicht im Client-Code sichtbar). Vorlagen liegen als eigenständige HTML-Dateien im Repo unter `emails/`: `supabase-confirm-signup.html` (Supabase-Auth-Bestätigungsmail, Go-Template-Syntax `{{ .ConfirmationURL }}`, wird als Custom-Template im Supabase-Dashboard eingetragen) und `willkommen.html` (separate Willkommens-Mail im App-Design, Resend-eigene Template-Syntax `{{{USER_FIRST_NAME}}}` / `{{{RESEND_UNSUBSCRIBE_URL}}}`, über Resend Broadcasts/Audiences verschickt).
 - **Cloud-Speicherung:** Tabelle `user_state` (Spalten `user_id`, `state` als JSONB, `updated_at`), pro Konto ein Datensatz. Wird per `upsert` beschrieben (debounced 1200 ms nach jeder `state`-Änderung) und beim Login per `select ... eq("user_id", userId).maybeSingle()` geladen.
 - **Migration lokaler Alt-Daten:** Existiert beim ersten Login mit einem Konto noch kein Cloud-Datensatz, aber lokale `localStorage`-Daten (aus der Zeit vor Nutzerkonten oder von einem Gerät ohne Login), zeigt `MigrationScreen` die Wahl „Daten übernehmen" (lädt sie in die Cloud hoch) oder „Neu starten" (verwirft sie).
 - **Zugang/Accounts verwalten:** Es gibt aktuell **keine** Admin-Oberfläche, keinen Einladungs-Mechanismus und keine Möglichkeit, Nutzer:innen aus der App-Session heraus zu verwalten (keine Service-Role-Credentials im Client, nur der Anon-Key). Registrierung ist reines Self-Service über den Login-Screen — jede:r mit der URL kann sich selbst ein Konto anlegen. Konto-/Nutzerverwaltung (z. B. Löschen, Passwort-Reset erzwingen, Zugriff sperren) läuft ausschließlich über das Supabase-Dashboard des Projekts, nicht über diesen Code.
-- Es gibt bislang **keinen** Passwort-vergessen-Flow und **keine** Konto-lösch-Funktion in der UI.
+- Es gibt bislang **keine** Konto-lösch-Funktion in der UI.
 
 ## Fasten-Verlauf bearbeiten (seit v1.111)
 - Im „Verlauf verwalten"-Panel wird jeder `fastLog`-Eintrag als eigene Karte gerendert (dunkles Schokobraun-Design, nicht das hellere Cream-Mockup, das nur als Struktur-Vorlage diente) mit drei editierbaren Feldern: **Ziel (h)** (Zahl), **Start** und **Ende** (je `datetime-local`), plus „Speichern"-Button (Gold-Pill) und „×"-Button zum Löschen.
@@ -75,6 +76,6 @@ Alle Fotos werden als Base64-JPEG direkt im Script eingebettet (`const XYZ_BACKG
 5. **Vor jeder Auslieferung:** Datei mit `node --check` auf einer extrahierten `<script>`-Sektion validieren (strenger als `new Function()`), UND jede neue Komponente/jeden neuen State explizit per `grep` verifizieren (Funktion definiert? State deklariert? Aufruf verdrahtet? Im Render-Baum eingebunden?) — reines „Datei wurde geschrieben" ist keine Garantie, dass alle Teile auch verbunden sind.
 
 ## Offene Ideen (besprochen, noch nicht umgesetzt)
-- Passwort-vergessen-Flow und Konto-lösch-Funktion in der UI.
+- Konto-lösch-Funktion in der UI.
 - Ggf. weitere Monetarisierungs-Optionen über PayPal-Spenden hinaus.
 
