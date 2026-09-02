@@ -1,4 +1,4 @@
-# Marlenia — Projektstand (Stand: v1.112)
+# Marlenia — Projektstand (Stand: v1.114)
 
 ## Überblick
 Marlenia ist eine Intervallfasten-Tracker-App (deutschsprachig), gebaut für Reno Schramm als persönliches Projekt, benannt nach seiner Frau Marlen. Tagline: „Intervallfasten leicht gemacht".
@@ -24,6 +24,8 @@ Marlenia ist eine Intervallfasten-Tracker-App (deutschsprachig), gebaut für Ren
 - Im „Verlauf verwalten"-Panel wird jeder `fastLog`-Eintrag als eigene Karte gerendert (dunkles Schokobraun-Design, nicht das hellere Cream-Mockup, das nur als Struktur-Vorlage diente) mit drei editierbaren Feldern: **Ziel (h)** (Zahl), **Start** und **Ende** (je `datetime-local`), plus „Speichern"-Button (Gold-Pill) und „×"-Button zum Löschen.
 - `fastLog`-Einträge speichern seit v1.111 zusätzlich `target` (die Zielstunden, mit denen die Fastenzeit gestartet wurde). `protocolLabelForTarget(hours)` (nahe `PROTOCOLS` definiert) rundet die Zielstunden und sucht ein passendes `PROTOCOLS`-Protokoll (z. B. „16:8 Protokoll"), sonst Fallback `"Xh Fasten"`. Ältere Einträge ohne `target` fallen beim Rendern auf die gerundete tatsächliche Dauer zurück.
 - Bearbeitung läuft über einen `fastDrafts`-State (Map `Index → {target, start, end}`), nicht mehr über den alten Single-Edit-Toggle (`editingFastIndex`/`editingFastValue`, entfernt) — dadurch sind alle Einträge gleichzeitig editierbar, wie im Mockup gezeigt.
+- Die drei Felder (Ziel/Start/Ende) sind in der Handyansicht untereinander gestapelt (`grid-cols-1`, ab `sm`-Breakpoint `sm:grid-cols-3` nebeneinander), seit v1.113.
+- **Löschen (Gewicht wie Fastenzeit) erfordert seit v1.114 eine Bestätigung** über das bestehende `ConfirmModal` (State `confirmDeleteEntry: {type: "weight"|"fast", idx} | null`) — der „×"-Button löscht nicht mehr direkt, sondern öffnet den Bestätigungsdialog.
 
 ## Hosting & Deployment
 - Live-Version läuft über **GitHub Pages**: Repo `renoschramm-arch/marlenia`, URL `https://renoschramm-arch.github.io/marlenia/`.
