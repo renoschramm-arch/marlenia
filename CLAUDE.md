@@ -1,4 +1,4 @@
-# Marlenia — Projektstand (Stand: v1.107)
+# Marlenia — Projektstand (Stand: v1.112)
 
 ## Überblick
 Marlenia ist eine Intervallfasten-Tracker-App (deutschsprachig), gebaut für Reno Schramm als persönliches Projekt, benannt nach seiner Frau Marlen. Tagline: „Intervallfasten leicht gemacht".
@@ -20,11 +20,17 @@ Marlenia ist eine Intervallfasten-Tracker-App (deutschsprachig), gebaut für Ren
 - **Zugang/Accounts verwalten:** Es gibt aktuell **keine** Admin-Oberfläche, keinen Einladungs-Mechanismus und keine Möglichkeit, Nutzer:innen aus der App-Session heraus zu verwalten (keine Service-Role-Credentials im Client, nur der Anon-Key). Registrierung ist reines Self-Service über den Login-Screen — jede:r mit der URL kann sich selbst ein Konto anlegen. Konto-/Nutzerverwaltung (z. B. Löschen, Passwort-Reset erzwingen, Zugriff sperren) läuft ausschließlich über das Supabase-Dashboard des Projekts, nicht über diesen Code.
 - Es gibt bislang **keinen** Passwort-vergessen-Flow und **keine** Konto-lösch-Funktion in der UI.
 
+## Fasten-Verlauf bearbeiten (seit v1.111)
+- Im „Verlauf verwalten"-Panel wird jeder `fastLog`-Eintrag als eigene Karte gerendert (dunkles Schokobraun-Design, nicht das hellere Cream-Mockup, das nur als Struktur-Vorlage diente) mit drei editierbaren Feldern: **Ziel (h)** (Zahl), **Start** und **Ende** (je `datetime-local`), plus „Speichern"-Button (Gold-Pill) und „×"-Button zum Löschen.
+- `fastLog`-Einträge speichern seit v1.111 zusätzlich `target` (die Zielstunden, mit denen die Fastenzeit gestartet wurde). `protocolLabelForTarget(hours)` (nahe `PROTOCOLS` definiert) rundet die Zielstunden und sucht ein passendes `PROTOCOLS`-Protokoll (z. B. „16:8 Protokoll"), sonst Fallback `"Xh Fasten"`. Ältere Einträge ohne `target` fallen beim Rendern auf die gerundete tatsächliche Dauer zurück.
+- Bearbeitung läuft über einen `fastDrafts`-State (Map `Index → {target, start, end}`), nicht mehr über den alten Single-Edit-Toggle (`editingFastIndex`/`editingFastValue`, entfernt) — dadurch sind alle Einträge gleichzeitig editierbar, wie im Mockup gezeigt.
+
 ## Hosting & Deployment
 - Live-Version läuft über **GitHub Pages**: Repo `renoschramm-arch/marlenia`, URL `https://renoschramm-arch.github.io/marlenia/`.
 - GitHub Pages serviert die Datei **zwingend unter dem Namen `index.html`** (Branch `main`, `/ (root)`).
 - Von dort zum iPhone-Home-Bildschirm hinzugefügt → läuft im Vollbild-Standalone-Modus (kein lokales HTML-Datei-Handling mehr nötig, das war ein früherer, inzwischen aufgegebener Ansatz über Dateien-App/iCloud, der nicht zuverlässig funktionierte).
 - **Versionierungs-Konvention:** Jede Änderung erhöht `APP_VERSION` (Konstante im Script, wird im Info-Tab angezeigt) UND den Dateinamen (`marlenia-v1.XX.html`). Zusätzlich wird stets eine identische Kopie als `index.html` bereitgestellt, die direkt das bestehende `index.html` im Repo ersetzt (GitHub erkennt das beim Hochladen automatisch als Replace).
+- **Git-Workflow:** Entwickelt wird auf einem Feature-Branch, jede fertige Änderung wird sofort committet, gepusht UND direkt (per `git merge --no-ff` + Push, **nicht** über einen GitHub-Pull-Request) in `main` gemergt — `main` ist der Branch, den GitHub Pages live ausliefert. „Immer gleich mergen" ist eine stehende Anweisung: nach jedem Push auf den Feature-Branch folgt ohne Nachfrage der Merge nach `main`.
 
 ## Design-System
 - Grundpalette „Schokobraun": Hintergrund-Verlauf `linear-gradient(135deg, #4A2C1D 0%, #2B1810 55%, #1F1209 100%)`.
@@ -36,8 +42,8 @@ Marlenia ist eine Intervallfasten-Tracker-App (deutschsprachig), gebaut für Ren
 - Bar-Chart-Farbverläufe (jeweils zu Gold): Trinkmenge Blau `#6FB1E0`, Fastenzeit Orange `#E0703A`, Gewicht Grün `#6FA87A`.
 
 ## Tab-Struktur
-1. **Fasten** — Ring-Timer, Streak-Badge, Progression-Vorschlag, Start/Stop (inkl. rückwirkend), Wasser-Tracker, Gewichts-Tracker.
-2. **Verlauf** — Fastenkalender (Monats-Heatmap), Zielgewicht-Fortschrittsbalken (editierbar), Gewichtstrend-Chart (mit kg-Skala), gemeinsame Karte mit drei 7-Tage-Balkendiagrammen (Trinkmenge/Fastenzeit/Gewicht), „Verlauf verwalten" (ausklappbar, Bearbeiten/Löschen einzelner Einträge).
+1. **Fasten** — Ring-Timer, Streak-Badge, Progression-Vorschlag, Start/Stop (inkl. rückwirkend), Wasser-Tracker, Gewichts-Tracker. Im Ring-Overlay steht unter der Restzeit-Anzeige eine Milchglas-Pill (`rounded-full border border-[#5C4530] bg-[#3A2317]/70 backdrop-blur-sm`, seit v1.108/v1.109) mit zwei Zeilen: einer Beschriftung (z. B. „bis zum Fastenende", `text-xs`) und darunter der konkreten Uhrzeit, wann das Fasten endet bzw. das Essensfenster beginnt (z. B. „Ende: 18:30 Uhr", `fmtClock()`-Helper, `text-sm` — bewusst größer als die Beschriftung, seit v1.112; **nicht** zu verwechseln mit der großen Countdown-Digitalanzeige im Ring selbst, die unverändert `text-3xl` bleibt).
+2. **Verlauf** — Fastenkalender (Monats-Heatmap), Zielgewicht-Fortschrittsbalken (editierbar), Gewichtstrend-Chart (mit kg-Skala), gemeinsame Karte mit drei 7-Tage-Balkendiagrammen (Trinkmenge/Fastenzeit/Gewicht), „Verlauf verwalten" (ausklappbar, Bearbeiten/Löschen einzelner Einträge — siehe unten für das Fastenzeiten-Bearbeitungsschema seit v1.111).
 3. **Plan** — Wochenrotation, Protokoll-Auswahl (14:10 bis 36h), eigene Fastenzeit.
 4. **Design** — Hintergrund-Auswahl: 5 Farbverläufe (Schokobraun, Mitternacht, Waldgrün, Bordeaux, Anthrazit) + Foto-Themes (siehe unten) + eigene Fotos aus der Galerie hochladbar (clientseitig auf ~640px verkleinert, als Data-URL in `state.customBackgrounds` gespeichert).
 5. **Info** — Logo/Version, Home-Bildschirm-Anleitung (ausklappbar), Entwickler/Tech-Stack, Danksagung an Marlen, Spenden-Button (öffnet Modal mit PayPal-Link `paypal.me/renoschramm`), Copyright.
