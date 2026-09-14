@@ -1,0 +1,30 @@
+{
+  "name": "Marlenia",
+  "short_name": "Marlenia",
+  "description": "Intervallfasten leicht gemacht",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#2B1810",
+  "theme_color": "#2B1810",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Fasten starten",
+      "short_name": "Fasten starten",
+      "description": "Startet direkt eine neue Fastenzeit",
+      "url": "./index.html?action=start-fast",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Wasser loggen",
+      "short_name": "Wasser loggen",
+      "description": "Trägt 250 ml Trinkmenge ein",
+      "url": "./index.html?action=log-water",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}
