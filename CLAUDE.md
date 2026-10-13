@@ -1,4 +1,4 @@
-# Marlenia — Projektstand (Stand: v1.127)
+# Marlenia — Projektstand (Stand: v1.133)
 
 ## Überblick
 Marlenia ist eine Intervallfasten-Tracker-App (deutschsprachig), gebaut für Reno Schramm als persönliches Projekt, benannt nach seiner Frau Marlen. Tagline: „Intervallfasten leicht gemacht".
@@ -54,6 +54,7 @@ Marlenia ist eine Intervallfasten-Tracker-App (deutschsprachig), gebaut für Ren
 - Von dort zum iPhone-Home-Bildschirm hinzugefügt → läuft im Vollbild-Standalone-Modus (kein lokales HTML-Datei-Handling mehr nötig, das war ein früherer, inzwischen aufgegebener Ansatz über Dateien-App/iCloud, der nicht zuverlässig funktionierte).
 - **Versionierungs-Konvention:** Jede Änderung erhöht `APP_VERSION` (Konstante im Script, wird im Info-Tab angezeigt) UND den Dateinamen (`marlenia-v1.XX.html`). Zusätzlich wird stets eine identische Kopie als `index.html` bereitgestellt, die direkt das bestehende `index.html` im Repo ersetzt (GitHub erkennt das beim Hochladen automatisch als Replace).
 - **Git-Workflow:** Entwickelt wird auf einem Feature-Branch, jede fertige Änderung wird sofort committet, gepusht UND direkt (per `git merge --no-ff` + Push, **nicht** über einen GitHub-Pull-Request) in `main` gemergt — `main` ist der Branch, den GitHub Pages live ausliefert. „Immer gleich mergen" ist eine stehende Anweisung: nach jedem Push auf den Feature-Branch folgt ohne Nachfrage der Merge nach `main`.
+- **SEO/Meta-Tags:** Seit v1.133 hat `<head>` ein `<meta name="description">` (vorher fehlte es — wurde über eine SEO-Prüfung eines Audit-Tools auffällig, das Dokumente ohne Meta-Beschreibung als „Best Practice für Inhalte"-Verstoß meldet). Bei inhaltlichen Änderungen am Kern der App (neue Haupt-Features) den Beschreibungstext ggf. mitpflegen, damit er nicht veraltet.
 
 ## Design-System
 - Grundpalette „Schokobraun": Hintergrund-Verlauf `linear-gradient(135deg, #4A2C1D 0%, #2B1810 55%, #1F1209 100%)`.
